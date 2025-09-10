@@ -7,13 +7,18 @@ const CHAT_KEY = "FRIDAY_CHAT";
 const isLocalDev = window.location.hostname === "localhost" && window.location.port === "5173";
 const DEFAULT_BASE = isLocalDev
   ? "http://127.0.0.1:8767"
-  : `${window.location.origin}/api`; // works for Tailscale and any deployed host
+  : `${window.location.origin}/api`; // Tailscale (and any deployed host)
 
 type Mode = "idle" | "listening" | "thinking" | "speaking";
 
 export default function App() {
   // state
-  const [base, setBase] = useState<string>(() => localStorage.getItem(BASE_KEY) || DEFAULT_BASE);
+  const [base, setBase] = useState<string>(() => {
+    const saved = localStorage.getItem(BASE_KEY) || "";
+    // If not in local dev, ignore saved localhost base and use DEFAULT_BASE
+    if (!isLocalDev && saved.startsWith("http://127.0.0.1:8767")) return DEFAULT_BASE;
+    return saved || DEFAULT_BASE;
+  });
   const [chat, setChat] = useState<Msg[]>(() => {
     try { return JSON.parse(localStorage.getItem(CHAT_KEY) || "[]"); } catch { return []; }
   });
