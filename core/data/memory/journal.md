@@ -1,0 +1,1 @@
+- 2025-09-10T01:45:15.800591+00:00 — Bradley runs Universe; Friday is his private assistant.

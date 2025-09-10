@@ -11,7 +11,6 @@ from .executor import Executor
 from .sandbox import Sandbox
 from pydantic import BaseModel
 from typing import List
-from openai import OpenAI
 from .memory_store import save_text as mem_save_text, upsert_embedding as mem_upsert_embedding, search as mem_search
 
 # Add plugins directory to path for imports
@@ -154,8 +153,7 @@ def chat(req: ChatRequest, request: Request):
         user_message = req.messages[-1].content if req.messages else ""
         try:
             if user_message:
-                client = OpenAI(api_key=get_config_value("auth", "openai_api_key", "OPENAI_API_KEY"))
-                q_emb = client.embeddings.create(model="text-embedding-3-large", input=user_message).data[0].embedding
+                q_emb = _embed_text(user_message)
                 results = mem_search(q_emb, top_k=3)
                 notes = [r["text"] for r in results if float(r.get("score", 0)) >= 0.75]
                 if notes:
@@ -187,8 +185,7 @@ def chat(req: ChatRequest, request: Request):
             if user_message and final_response.get("content"):
                 conversation_context = f"User said: {user_message}\nFriday replied: {final_response['content']}"
                 # embed + save
-                client = OpenAI(api_key=get_config_value("auth", "openai_api_key", "OPENAI_API_KEY"))
-                emb = client.embeddings.create(model="text-embedding-3-large", input=conversation_context).data[0].embedding
+                emb = _embed_text(conversation_context)
                 mem_id = mem_save_text(conversation_context)
                 mem_upsert_embedding(mem_id, conversation_context, emb)
         except Exception as e:
@@ -315,6 +312,27 @@ async def voice_transcribe(file: UploadFile = File(None), audio: UploadFile = Fi
 def _is_local(request: Request) -> bool:
     return (request.client and request.client.host in ("127.0.0.1", "::1"))
 
+def _embed_text(text: str):
+    key = get_config_value("auth", "openai_api_key", "OPENAI_API_KEY")
+    if not key:
+        raise RuntimeError("OPENAI_API_KEY missing")
+    resp = requests.post(
+        "https://api.openai.com/v1/embeddings",
+        headers={
+            "Authorization": f"Bearer {key}",
+            "Content-Type": "application/json",
+        },
+        json={
+            "model": "text-embedding-3-large",
+            "input": text,
+        },
+        timeout=30,
+    )
+    if resp.status_code != 200:
+        raise RuntimeError(f"OpenAI embeddings error: {resp.status_code} {resp.text[:200]}")
+    data = resp.json()
+    return data["data"][0]["embedding"]
+
 @app.post("/memory/save")
 def memory_save(req: dict, request: Request):
     if not _is_local(request):
@@ -322,8 +340,7 @@ def memory_save(req: dict, request: Request):
     text = (req or {}).get("text", "").strip()
     if not text:
         raise HTTPException(status_code=400, detail="text is required")
-    client = OpenAI(api_key=get_config_value("auth", "openai_api_key", "OPENAI_API_KEY"))
-    emb = client.embeddings.create(model="text-embedding-3-large", input=text).data[0].embedding
+    emb = _embed_text(text)
     mid = mem_save_text(text)
     mem_upsert_embedding(mid, text, emb)
     return {"ok": True, "id": mid}
@@ -336,7 +353,6 @@ def memory_search(req: dict, request: Request):
     top_k = int((req or {}).get("top_k", 5))
     if not query:
         return {"results": []}
-    client = OpenAI(api_key=get_config_value("auth", "openai_api_key", "OPENAI_API_KEY"))
-    q_emb = client.embeddings.create(model="text-embedding-3-large", input=query).data[0].embedding
+    q_emb = _embed_text(query)
     results = mem_search(q_emb, top_k=top_k)
     return {"results": results}
