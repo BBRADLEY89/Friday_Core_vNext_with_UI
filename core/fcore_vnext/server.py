@@ -130,6 +130,10 @@ def health():
             "elevenlabs_key_present": bool(get_config_value("voice", "elevenlabs_api_key", "ELEVENLABS_API_KEY"))
         }
     }
+
+@app.get("/api/health")
+def api_health_alias():
+    return health()
 @app.get("/tools")
 def tools():
     return {"tools": registry.list_tools()}
