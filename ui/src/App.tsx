@@ -18,6 +18,8 @@ export default function App() {
   const [busy, setBusy] = useState(false);
   const [voiceOn, setVoiceOn] = useState(false);
   const [mode, setMode] = useState<Mode>("idle");
+  const [memQuery, setMemQuery] = useState("");
+  const [memResults, setMemResults] = useState<{ text: string; score: number }[]>([]);
 
   const audioRef = useRef<HTMLAudioElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -37,6 +39,24 @@ export default function App() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ tool_name, args })
+    });
+    return r.json();
+  }
+
+  async function memorySave(text: string) {
+    const r = await fetch(`${base}/memory/save`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text })
+    });
+    return r.json();
+  }
+
+  async function memorySearch(query: string, top_k = 5) {
+    const r = await fetch(`${base}/memory/search`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query, top_k })
     });
     return r.json();
   }
@@ -132,9 +152,10 @@ export default function App() {
 
   // remember / forget buttons
   async function rememberThis() {
-    const txt = input.trim() || (chat[chat.length - 1]?.content || "");
-    if (!txt) return;
-    await runTool("memory_save", { text: txt });
+    // Save last assistant reply
+    const last = [...chat].reverse().find(m => m.role === "assistant")?.content || input.trim();
+    if (!last) return;
+    await memorySave(last);
   }
 
   async function forgetToday() {
@@ -208,6 +229,40 @@ export default function App() {
           <button onClick={rememberThis} className="btn-secondary">Remember this</button>
           <button onClick={forgetToday} className="btn-secondary">Forget today</button>
           <span className="text-xs opacity-60 ml-auto">Mode: {mode}</span>
+        </div>
+
+        {/* Memory panel */}
+        <div className="mt-4 p-3 border border-white/10 rounded-xl bg-white/5">
+          <div className="flex gap-2 items-center">
+            <input
+              className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 outline-none"
+              placeholder="Search memory…"
+              value={memQuery}
+              onChange={e => setMemQuery(e.target.value)}
+            />
+            <button
+              onClick={async () => {
+                const q = memQuery.trim();
+                if (!q) { setMemResults([]); return; }
+                try {
+                  const res = await memorySearch(q, 5);
+                  setMemResults((res?.results || []).map((r: any) => ({ text: r.text, score: r.score })));
+                } catch { setMemResults([]); }
+              }}
+              className="btn"
+            >Search Memory</button>
+          </div>
+
+          {memResults.length > 0 && (
+            <div className="mt-3 space-y-2 text-sm">
+              {memResults.map((r, i) => (
+                <div key={i} className="p-2 rounded bg-black/20 border border-white/10">
+                  <div className="opacity-60">score: {Math.round(r.score * 100) / 100}</div>
+                  <div>{r.text}</div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

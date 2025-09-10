@@ -1,5 +1,6 @@
 import os, toml, requests, io, sys, json
-from fastapi import FastAPI, File, UploadFile, Response, HTTPException
+from fastapi import FastAPI, File, UploadFile, Response, HTTPException, Request
+from fastapi.responses import JSONResponse
 from zoneinfo import ZoneInfo
 from datetime import datetime
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,6 +11,8 @@ from .executor import Executor
 from .sandbox import Sandbox
 from pydantic import BaseModel
 from typing import List
+from openai import OpenAI
+from .memory_store import save_text as mem_save_text, upsert_embedding as mem_upsert_embedding, search as mem_search
 
 # Add plugins directory to path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'plugins'))
@@ -126,79 +129,79 @@ def health():
 def tools():
     return {"tools": registry.list_tools()}
 @app.post("/chat")
-def chat(req: ChatRequest):
-    # Set live context for persona system
-    os.environ["NOW_OVERRIDE"] = now_local().strftime("%A %d %B %Y, %H:%M")
-    os.environ["TZ_OVERRIDE"] = TZ
-    
-    messages = [m.model_dump() for m in req.messages]
-    
-    # Limit to last 4 messages for GPT context (memory plugin provides longer-term context)
-    messages = messages[-4:]
-    
-    # (1) Retrieve top memories and inject as context
-    user_message = messages[-1].get("content", "") if messages else ""
-    if user_message:
+def chat(req: ChatRequest, request: Request):
+    try:
+        # Live context
+        os.environ["NOW_OVERRIDE"] = now_local().strftime("%A %d %B %Y, %H:%M")
+        os.environ["TZ_OVERRIDE"] = TZ
+
+        messages = [m.model_dump() for m in req.messages]
+        messages = messages[-4:]
+
+        # Persona system prompt
+        persona = CONFIG.get("persona", {}) or {}
+        p_name = persona.get("name", "Friday")
+        p_tone = persona.get("tone", "warm, proactive")
+        p_principles = persona.get("principles", ["clarity", "honesty"]) or []
+        bullets = "\n".join([f"- {p}" for p in p_principles])
+        sys_msg = f"You are {p_name}.\nTone: {p_tone}.\nPrinciples:\n{bullets}"
+        user_hdr = request.headers.get("X-User-Name")
+        if user_hdr:
+            sys_msg += f"\nUser is {user_hdr}."
+        messages.insert(0, {"role": "system", "content": sys_msg})
+
+        # Memory search (local store)
+        user_message = req.messages[-1].content if req.messages else ""
         try:
-            memory_results = executor.run_tool("memory_search", {"query": user_message, "limit": 5}, {})
-            if memory_results and isinstance(memory_results, dict) and memory_results.get("results"):
-                relevant_memories = []
-                for result in memory_results["results"]:
-                    if result.get("score", 0) > 0.35:  # Threshold for relevance
-                        relevant_memories.append(result["text"])
-                
-                if relevant_memories:
-                    memory_context = "Relevant memories:\n" + "\n".join([f"- {mem}" for mem in relevant_memories])
-                    # Inject memory context into system message or create new context message
-                    if messages and messages[0].get("role") == "system":
-                        messages[0]["content"] += "\n\n" + memory_context
-                    else:
-                        messages.insert(0, {"role": "system", "content": memory_context})
+            if user_message:
+                client = OpenAI(api_key=get_config_value("auth", "openai_api_key", "OPENAI_API_KEY"))
+                q_emb = client.embeddings.create(model="text-embedding-3-large", input=user_message).data[0].embedding
+                results = mem_search(q_emb, top_k=3)
+                notes = [r["text"] for r in results if float(r.get("score", 0)) >= 0.75]
+                if notes:
+                    memo = "Relevant notes:\n" + "\n".join([f"- {t}" for t in notes])
+                    memo = memo[:2000]  # simple trim
+                    messages.insert(1, {"role": "system", "content": memo})
         except Exception as e:
-            print(f"Memory retrieval error: {e}")
-    
-    # Insert system message to encourage KG and rules usage
-    messages.insert(0, {"role": "system", "content": "Use KG and rules when helpful; always cite evidence if you used them."})
-    
-    first = planner.step(messages)
-    if first.get("tool_call"):
-        call = first["tool_call"]
-        result = executor.run_tool(
-            call["name"], call["arguments"],
-            {"workspace_root": WORKSPACE_ROOT,
-             "serpapi_key": os.getenv("SERPAPI_API_KEY") or get_config_value("web", "serpapi_api_key", "SERPAPI_API_KEY")}
-        )
-        messages.append({"role": "assistant", "content": json.dumps({"tool_result": result})})
-        second = planner.step(messages)
-        final_response = {"content": second.get("content",""), "tool_used": call["name"], "intermediate": result}
-    else:
-        final_response = {"content": first.get("content",""), "tool_used": None}
-    
-    # (2) Auto-save salient facts after computing response
-    try:
-        if user_message and final_response.get("content"):
-            conversation_context = f"User said: {user_message}\nFriday replied: {final_response['content']}"
-            executor.run_tool("memory_save", {"text": conversation_context}, {})
+            print(f"Local memory search error: {e}")
+
+        # Encourage KG/rules
+        messages.insert(1, {"role": "system", "content": "Use KG and rules when helpful; always cite evidence if you used them."})
+
+        first = planner.step(messages)
+        if first.get("tool_call"):
+            call = first["tool_call"]
+            result = executor.run_tool(
+                call["name"], call["arguments"],
+                {"workspace_root": WORKSPACE_ROOT,
+                 "serpapi_key": os.getenv("SERPAPI_API_KEY") or get_config_value("web", "serpapi_api_key", "SERPAPI_API_KEY")}
+            )
+            messages.append({"role": "assistant", "content": json.dumps({"tool_result": result})})
+            second = planner.step(messages)
+            final_response = {"content": second.get("content",""), "tool_used": call["name"], "intermediate": result}
+        else:
+            final_response = {"content": first.get("content",""), "tool_used": None}
+
+        # Auto-save salient facts (local store)
+        try:
+            if user_message and final_response.get("content"):
+                conversation_context = f"User said: {user_message}\nFriday replied: {final_response['content']}"
+                # embed + save
+                client = OpenAI(api_key=get_config_value("auth", "openai_api_key", "OPENAI_API_KEY"))
+                emb = client.embeddings.create(model="text-embedding-3-large", input=conversation_context).data[0].embedding
+                mem_id = mem_save_text(conversation_context)
+                mem_upsert_embedding(mem_id, conversation_context, emb)
+        except Exception as e:
+            print(f"Memory save error: {e}")
+
+        return final_response
     except Exception as e:
-        print(f"Memory save error: {e}")
-    
-    # (3) Write to daily journal (Quantum Mirror)
-    try:
-        if user_message and final_response.get("content"):
-            executor.run_tool("journal_write", {
-                "user_message": user_message,
-                "friday_response": final_response["content"],
-                "tool_used": final_response.get("tool_used")
-            }, {})
-    except Exception as e:
-        print(f"Journal write error: {e}")
-    
-    return final_response
+        return JSONResponse(status_code=500, content={"error": str(e)})
 
 @app.post("/api/chat")
-def chat_alias(req: ChatRequest):
+def chat_alias(req: ChatRequest, request: Request):
     # Route alias to support clients calling /api/chat
-    return chat(req)
+    return chat(req, request)
 
 @app.post("/run")
 def run_tool(req: dict):
@@ -308,3 +311,32 @@ async def voice_transcribe(file: UploadFile = File(None), audio: UploadFile = Fi
         api_key=get_config_value("auth", "openai_api_key", "OPENAI_API_KEY")
     )
     return {"text": text}
+
+def _is_local(request: Request) -> bool:
+    return (request.client and request.client.host in ("127.0.0.1", "::1"))
+
+@app.post("/memory/save")
+def memory_save(req: dict, request: Request):
+    if not _is_local(request):
+        raise HTTPException(status_code=403, detail="Local access only")
+    text = (req or {}).get("text", "").strip()
+    if not text:
+        raise HTTPException(status_code=400, detail="text is required")
+    client = OpenAI(api_key=get_config_value("auth", "openai_api_key", "OPENAI_API_KEY"))
+    emb = client.embeddings.create(model="text-embedding-3-large", input=text).data[0].embedding
+    mid = mem_save_text(text)
+    mem_upsert_embedding(mid, text, emb)
+    return {"ok": True, "id": mid}
+
+@app.post("/memory/search")
+def memory_search(req: dict, request: Request):
+    if not _is_local(request):
+        raise HTTPException(status_code=403, detail="Local access only")
+    query = (req or {}).get("query", "").strip()
+    top_k = int((req or {}).get("top_k", 5))
+    if not query:
+        return {"results": []}
+    client = OpenAI(api_key=get_config_value("auth", "openai_api_key", "OPENAI_API_KEY"))
+    q_emb = client.embeddings.create(model="text-embedding-3-large", input=query).data[0].embedding
+    results = mem_search(q_emb, top_k=top_k)
+    return {"results": results}

@@ -15,3 +15,8 @@ elevenlabs_api_key = "sk_82bf4204fa8c9d18214ec86232bd67bc3149e49b3d80aa2a"
 voice_id = "EXAVITQu4vr4xnSDxMaL"
 [timezone]
 tz = "Europe/London"
+
+[persona]
+name = "Friday"
+tone = "warm, proactive; concise when executing tasks; detailed when designing"
+principles = ["clarity","honesty","ownership","build_fast","protect_user"]
