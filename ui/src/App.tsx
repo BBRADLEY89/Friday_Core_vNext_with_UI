@@ -4,7 +4,10 @@ import "./styles.css";
 type Msg = { role: "user" | "assistant"; content: string };
 const BASE_KEY = "FRIDAY_BASE";
 const CHAT_KEY = "FRIDAY_CHAT";
-const DEFAULT_BASE = "http://127.0.0.1:8767";
+const isLocalDev = window.location.hostname === "localhost" && window.location.port === "5173";
+const DEFAULT_BASE = isLocalDev
+  ? "http://127.0.0.1:8767"
+  : `${window.location.origin}/api`; // works for Tailscale and any deployed host
 
 type Mode = "idle" | "listening" | "thinking" | "speaking";
 

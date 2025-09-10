@@ -61,7 +61,7 @@ WORKSPACE_ROOT = os.path.abspath(".")
 
 app = FastAPI()
 
-# Enable CORS for UI dev origins
+# Enable CORS for UI dev origins and Tailscale *.ts.net domains
 ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
@@ -70,6 +70,7 @@ ALLOWED_ORIGINS = [
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
+    allow_origin_regex=r"^https://.*\.ts\.net$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
