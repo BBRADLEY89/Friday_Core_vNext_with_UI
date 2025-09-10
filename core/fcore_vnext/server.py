@@ -291,5 +291,9 @@ async def voice_transcribe(file: UploadFile = File(None), audio: UploadFile = Fi
     if not up:
         raise HTTPException(status_code=400, detail="No audio file provided (use 'file' or 'audio')")
     data = await up.read()
-    text = transcribe_audio(data, up.filename or "input.webm", api_key=OPENAI_KEY)
+    text = transcribe_audio(
+        data,
+        up.filename or "input.webm",
+        api_key=get_config_value("auth", "openai_api_key", "OPENAI_API_KEY")
+    )
     return {"text": text}
