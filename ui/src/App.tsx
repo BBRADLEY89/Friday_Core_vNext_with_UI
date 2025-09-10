@@ -5,6 +5,7 @@ type Msg = { role: "user" | "assistant"; content: string };
 const BASE_KEY = "FRIDAY_BASE";
 const CHAT_KEY = "FRIDAY_CHAT";
 const isLocalDev = window.location.hostname === "localhost" && window.location.port === "5173";
+const isTs = window.location.hostname.endsWith(".ts.net");
 const DEFAULT_BASE = isLocalDev
   ? "http://127.0.0.1:8767"
   : `${window.location.origin}/api`; // Tailscale (and any deployed host)
@@ -193,6 +194,9 @@ export default function App() {
             onChange={e => setBase(e.target.value)}
             className="bg-white/5 border border-white/10 rounded px-2 py-1 text-sm w-[260px] outline-none"
           />
+          {isTs && (
+            <span className="text-xs opacity-60">Tailscale mode: Base → /api</span>
+          )}
         </div>
       </header>
 
