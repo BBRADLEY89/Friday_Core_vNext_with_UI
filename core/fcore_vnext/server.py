@@ -194,6 +194,11 @@ def chat(req: ChatRequest):
     
     return final_response
 
+@app.post("/api/chat")
+def chat_alias(req: ChatRequest):
+    # Route alias to support clients calling /api/chat
+    return chat(req)
+
 @app.post("/run")
 def run_tool(req: dict):
     tool_name = req.get("tool_name", "")
@@ -240,6 +245,11 @@ def run_tool(req: dict):
     
     # Use Registry for all other tools
     return registry.run(tool_name, args)
+
+@app.post("/api/run")
+def run_alias(req: dict):
+    # Route alias to support clients calling /api/run
+    return run_tool(req)
 
 @app.get("/__where")
 def where():
