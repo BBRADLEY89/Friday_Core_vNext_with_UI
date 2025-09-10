@@ -1,14 +1,23 @@
-# Node / UI
-ui/node_modules/
-ui/dist/
-
-# Python / Core
-core/.venv/
-core/__pycache__/
-
-# Logs
-logs/
+# Node / web
+node_modules/
+dist/
+build/
+.next/
+.vite/
 *.log
 
-# Env files
+# Python
+__pycache__/
+*.pyc
+.venv/
+env/
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Secrets (DON'T COMMIT REAL KEYS)
 .env
+*.env
