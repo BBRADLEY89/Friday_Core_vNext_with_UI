@@ -1,0 +1,12 @@
+name: web_search_serp
+version: "0.2.0"
+description: "Google search via SerpAPI"
+tools:
+  - name: web_search
+    description: "Web search (SerpAPI)"
+    parameters:
+      type: object
+      properties:
+        query: { type: string }
+        num: { type: integer, default: 5 }
+      required: [query]

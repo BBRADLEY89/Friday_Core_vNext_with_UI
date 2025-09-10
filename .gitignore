@@ -1,0 +1,14 @@
+# Node / UI
+ui/node_modules/
+ui/dist/
+
+# Python / Core
+core/.venv/
+core/__pycache__/
+
+# Logs
+logs/
+*.log
+
+# Env files
+.env

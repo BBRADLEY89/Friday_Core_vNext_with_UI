@@ -1,0 +1,78 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --blue: #39a1ff;
+  --pink: #ff36a3;
+}
+
+.bg-ink { background: #0b0f1a; }
+
+/* Minimal bubbles */
+.bubble {
+  max-width: 85%;
+  padding: 0.75rem 1rem;
+  border-radius: 1rem;
+  line-height: 1.625;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.07);
+  backdrop-filter: blur(8px);
+}
+.bubble.user { margin-left:auto; }
+.bubble.assistant { margin-right:auto; }
+
+/* Buttons */
+.btn {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  background: linear-gradient(90deg, var(--blue), var(--pink));
+}
+.btn-on {
+  box-shadow: 0 0 20px rgba(57,161,255,.45), 0 0 28px rgba(255,54,163,.35);
+}
+.btn-secondary {
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.09);
+}
+
+/* Infinity logo + ring states */
+.logo-infinity {
+  width: 24px; height: 24px; border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, var(--blue), transparent 60%),
+              radial-gradient(circle at 70% 70%, var(--pink), transparent 60%),
+              radial-gradient(circle at 50% 50%, rgba(255,255,255,0.2), transparent 50%);
+  box-shadow: 0 0 18px rgba(57,161,255,.5), 0 0 18px rgba(255,54,163,.35) inset;
+}
+
+/* Centerpiece pulsing infinity */
+.infinity-core {
+  width: 120px; height: 120px;
+  background:
+    radial-gradient(circle at 35% 50%, var(--blue), transparent 60%),
+    radial-gradient(circle at 65% 50%, var(--pink), transparent 60%);
+  filter: blur(0.2px);
+  border-radius: 50%;
+  mask: radial-gradient(circle at 50% 50%, transparent 44%, black 46%),
+        radial-gradient(100% 60% at 50% 50%, black 44%, transparent 46%);
+}
+
+/* Ring animation by state */
+.ring {
+  width: 220px; height: 220px; border-radius: 9999px;
+  box-shadow: 0 0 42px rgba(57,161,255,.25), 0 0 42px rgba(255,54,163,.25) inset;
+  display:flex; align-items:center; justify-content:center;
+  transition: all .3s ease;
+}
+@keyframes breathe {
+  0% { box-shadow: 0 0 28px rgba(57,161,255,.25), 0 0 28px rgba(255,54,163,.25) inset; transform: scale(1); }
+  50% { box-shadow: 0 0 48px rgba(57,161,255,.35), 0 0 48px rgba(255,54,163,.35) inset; transform: scale(1.04); }
+  100% { box-shadow: 0 0 28px rgba(57,161,255,.25), 0 0 28px rgba(255,54,163,.25) inset; transform: scale(1); }
+}
+.ring { animation: breathe 3s ease-in-out infinite; }
+.ring-listening { animation-duration: 1.6s; }
+.ring-thinking { animation-duration: 2.8s; filter: saturate(1.15); }
+.ring-speaking { animation-duration: 1.2s; filter: brightness(1.2); }

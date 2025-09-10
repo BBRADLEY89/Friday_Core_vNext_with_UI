@@ -1,0 +1,4 @@
+name: solver_z3
+description: Z3 SMT solver for numeric/temporal constraint checking
+version: "0.1.0"
+author: Universe System

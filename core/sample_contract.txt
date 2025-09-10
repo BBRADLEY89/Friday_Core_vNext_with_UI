@@ -1,0 +1,41 @@
+SOFTWARE DEVELOPMENT AGREEMENT
+
+This Software Development Agreement ("Agreement") is entered into on January 15, 2025, between TechCorp Inc., a Delaware corporation ("Client"), and DevStudio LLC, a California limited liability company ("Developer").
+
+1. SCOPE OF WORK
+Developer shall design, develop, and deliver a custom web application for Client's e-commerce platform according to the specifications outlined in Exhibit A.
+
+2. PAYMENT TERMS
+Client shall pay Developer a total fee of $50,000 for the services outlined in this Agreement. Payment shall be made as follows:
+- 25% ($12,500) due upon signing this Agreement
+- 50% ($25,000) due upon delivery of beta version  
+- 25% ($12,500) due upon final delivery and acceptance
+
+Payment is due within 30 days of invoice date. Late payments shall accrue interest at 1.5% per month.
+
+3. DELIVERY SCHEDULE
+Developer shall deliver the beta version within 60 days of contract execution.
+Final delivery shall occur within 90 days of contract execution.
+
+4. INTELLECTUAL PROPERTY
+All source code, documentation, and deliverables created under this Agreement shall be the exclusive property of Client upon full payment. Developer retains rights to general methodologies and know-how.
+
+5. CONFIDENTIALITY
+Both parties agree to maintain the confidentiality of proprietary information shared during the course of this Agreement for a period of 5 years.
+
+6. LIABILITY AND WARRANTIES
+Developer warrants that the software will be free from material defects for 90 days after delivery. Developer's total liability shall not exceed the contract value of $50,000.
+
+7. TERMINATION
+Either party may terminate this Agreement with 30 days written notice. Upon termination, Client shall pay for all work completed to date.
+
+8. PAYMENT DEADLINE OVERRIDE
+Notwithstanding Section 2, Client may request immediate payment upon delivery of any milestone, with payment due within 5 business days of such request.
+
+9. GOVERNING LAW
+This Agreement shall be governed by the laws of the State of California.
+
+IN WITNESS WHEREOF, the parties have executed this Agreement as of the date first written above.
+
+TechCorp Inc.                    DevStudio LLC
+By: John Smith, CEO             By: Sarah Johnson, Managing Member

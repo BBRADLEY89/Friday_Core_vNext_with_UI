@@ -1,0 +1,21 @@
+[Unit]
+Description=Friday UI (static build on port 5173)
+After=network.target
+Wants=friday-vnext.service
+
+[Service]
+Type=simple
+User=bradley
+Group=bradley
+WorkingDirectory=/home/bradley/Desktop/Friday_Core_vNext_with_UI./ui
+# Build if dist is missing, then serve dist on 0.0.0.0:5173
+ExecStart=/usr/bin/env bash -lc 'if [ ! -d dist ]; then npm ci && npm run build; fi; npx serve -s dist -l tcp://0.0.0.0:5173'
+Restart=always
+RestartSec=3
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

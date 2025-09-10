@@ -1,0 +1,13 @@
+fastapi==0.116.1
+uvicorn==0.35.0
+pydantic==2.9.2
+pyyaml==6.0.2
+toml==0.10.2
+openai==1.51.2
+requests==2.32.3
+python-multipart==0.0.9google-search-results==2.4.2
+numpy
+neo4j
+z3-solver
+google-search-results
+httpx

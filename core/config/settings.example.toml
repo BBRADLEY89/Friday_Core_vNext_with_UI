@@ -1,0 +1,15 @@
+[server]
+host = "127.0.0.1"
+port = 8765
+[auth]
+openai_api_key = ""
+[paths]
+workspace_root = "workspace"
+plugins_root = "plugins"
+logs_dir = "logs"
+memory_dir = "memory"
+[web]
+serpapi_api_key = ""
+[voice]
+elevenlabs_api_key = ""
+voice_id = "Rachel"

@@ -1,0 +1,28 @@
+[Unit]
+Description=Friday vNext AI Core
+After=network.target
+
+[Service]
+Type=simple
+User=bradley
+Group=bradley
+WorkingDirectory=/home/bradley/Desktop/Friday_Core_vNext_with_UI./core
+ExecStart=/home/bradley/Desktop/Friday_Core_vNext_with_UI./core/venv/bin/python -m uvicorn fcore_vnext.server:app --host 127.0.0.1 --port 8767
+Restart=always
+RestartSec=5
+
+# Environment variables - these will be loaded from the system/user environment
+# Or you can uncomment and add your keys directly here:
+# Environment="OPENAI_API_KEY=sk-..."
+# Environment="ELEVENLABS_API_KEY=sk-..."
+# Environment="SERPAPI_API_KEY=..."
+
+# Load environment from user's bashrc (optional)
+EnvironmentFile=-/home/bradley/.env
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

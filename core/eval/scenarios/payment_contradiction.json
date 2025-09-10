@@ -1,0 +1,75 @@
+{
+  "name": "Payment Contradiction Scenario",
+  "description": "Contract with conflicting payment deadlines to test contradiction detection",
+  "kg_data": {
+    "nodes": [
+      {
+        "id": "EVAL-001",
+        "labels": ["Contract"],
+        "properties": {
+          "id": "EVAL-001",
+          "title": "Test Contract with Payment Conflicts",
+          "effective_date": "2025-01-01",
+          "law": "State of New York"
+        }
+      },
+      {
+        "id": "eval-clause-001",
+        "labels": ["Clause"],
+        "properties": {
+          "id": "eval-clause-001",
+          "number": "2",
+          "type": "PaymentDeadline",
+          "text": "Payment due within 30 days of invoice",
+          "scope": "Standard payment terms",
+          "value": 10000,
+          "deadline_days": 30
+        }
+      },
+      {
+        "id": "eval-clause-002",
+        "labels": ["Clause"],
+        "properties": {
+          "id": "eval-clause-002",
+          "number": "5",
+          "type": "PaymentDeadline",
+          "text": "All payments must be made within 15 days",
+          "scope": "Payment terms",
+          "value": 10000,
+          "deadline_days": 15
+        }
+      }
+    ],
+    "relationships": [
+      {
+        "source": "eval-clause-001",
+        "target": "EVAL-001",
+        "type": "PART_OF",
+        "properties": {}
+      },
+      {
+        "source": "eval-clause-002",
+        "target": "EVAL-001",
+        "type": "PART_OF",
+        "properties": {}
+      }
+    ]
+  },
+  "question": "Are there any payment deadline conflicts in contract EVAL-001?",
+  "expected_flags": [
+    "Payment Deadline Conflicts",
+    "deadline_days mismatch"
+  ],
+  "expected_mentions": [
+    "30 days",
+    "15 days",
+    "contradiction",
+    "conflict"
+  ],
+  "should_find_contradictions": true,
+  "grading": {
+    "contradiction_detected": true,
+    "specific_clauses_mentioned": ["eval-clause-001", "eval-clause-002"],
+    "deadline_values_mentioned": [30, 15]
+  }
+}

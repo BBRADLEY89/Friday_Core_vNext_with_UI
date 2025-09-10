@@ -1,0 +1,76 @@
+{
+  "name": "Temporal Constraint Scenario",
+  "description": "Contract with impossible timeline constraints to test Z3 solver integration",
+  "kg_data": {
+    "nodes": [
+      {
+        "id": "EVAL-004",
+        "labels": ["Contract"],
+        "properties": {
+          "id": "EVAL-004",
+          "title": "Contract with Timeline Issues",
+          "effective_date": "2025-04-01",
+          "law": "State of Florida"
+        }
+      },
+      {
+        "id": "eval-clause-007",
+        "labels": ["Clause"],
+        "properties": {
+          "id": "eval-clause-007",
+          "number": "2",
+          "type": "DeliveryDate",
+          "text": "Final delivery within 30 days of contract signing",
+          "scope": "Delivery schedule",
+          "value": null,
+          "deadline_days": 30
+        }
+      },
+      {
+        "id": "eval-clause-008",
+        "labels": ["Clause"],
+        "properties": {
+          "id": "eval-clause-008",
+          "number": "3",
+          "type": "PaymentDeadline",
+          "text": "Payment due 45 days before delivery",
+          "scope": "Payment terms",
+          "value": 15000,
+          "deadline_days": -45
+        }
+      }
+    ],
+    "relationships": [
+      {
+        "source": "eval-clause-007",
+        "target": "EVAL-004",
+        "type": "PART_OF",
+        "properties": {}
+      },
+      {
+        "source": "eval-clause-008",
+        "target": "EVAL-004",
+        "type": "PART_OF",
+        "properties": {}
+      }
+    ]
+  },
+  "question": "Are the timeline constraints in contract EVAL-004 feasible?",
+  "expected_flags": [
+    "Temporal Constraint Violations",
+    "Impossible timeline: payment before signing"
+  ],
+  "expected_mentions": [
+    "impossible",
+    "timeline",
+    "before signing",
+    "constraint",
+    "feasible"
+  ],
+  "should_find_contradictions": false,
+  "grading": {
+    "temporal_analysis": true,
+    "constraint_violation_detected": true,
+    "solver_used": true
+  }
+}

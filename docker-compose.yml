@@ -1,0 +1,12 @@
+version: '3.8'
+services:
+  neo4j:
+    image: neo4j:5.20
+    container_name: friday_neo4j
+    ports: ["7474:7474","7687:7687"]
+    environment:
+      - NEO4J_AUTH=neo4j/fridaypass
+      - NEO4J_dbms_security_procedures_unrestricted=apoc.*
+      - NEO4J_PLUGINS=["apoc"]
+    volumes:
+      - ./core/kg/neo4j_data:/data

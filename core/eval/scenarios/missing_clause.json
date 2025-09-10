@@ -1,0 +1,75 @@
+{
+  "name": "Missing Clause Scenario",
+  "description": "Contract missing standard intellectual property clause to test missing clause detection",
+  "kg_data": {
+    "nodes": [
+      {
+        "id": "EVAL-002",
+        "labels": ["Contract"],
+        "properties": {
+          "id": "EVAL-002",
+          "title": "Incomplete Contract Missing IP Clause",
+          "effective_date": "2025-02-01",
+          "law": "State of California"
+        }
+      },
+      {
+        "id": "eval-clause-003",
+        "labels": ["Clause"],
+        "properties": {
+          "id": "eval-clause-003",
+          "number": "1",
+          "type": "PaymentDeadline",
+          "text": "Payment due within 30 days",
+          "scope": "Payment terms",
+          "value": 25000,
+          "deadline_days": 30
+        }
+      },
+      {
+        "id": "eval-clause-004",
+        "labels": ["Clause"],
+        "properties": {
+          "id": "eval-clause-004",
+          "number": "2",
+          "type": "DeliveryDate",
+          "text": "Delivery within 90 days",
+          "scope": "Delivery schedule",
+          "value": null,
+          "deadline_days": 90
+        }
+      }
+    ],
+    "relationships": [
+      {
+        "source": "eval-clause-003",
+        "target": "EVAL-002",
+        "type": "PART_OF",
+        "properties": {}
+      },
+      {
+        "source": "eval-clause-004",
+        "target": "EVAL-002",
+        "type": "PART_OF",
+        "properties": {}
+      }
+    ]
+  },
+  "question": "What are the potential issues with contract EVAL-002?",
+  "expected_flags": [
+    "Missing Required Clauses",
+    "No IntellectualProperty clause found"
+  ],
+  "expected_mentions": [
+    "missing",
+    "intellectual property",
+    "IP clause",
+    "incomplete"
+  ],
+  "should_find_contradictions": false,
+  "grading": {
+    "missing_clause_detected": true,
+    "clause_type_mentioned": "IntellectualProperty",
+    "completeness_analysis": true
+  }
+}

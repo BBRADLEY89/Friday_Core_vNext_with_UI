@@ -1,0 +1,1 @@
+# Friday Core vNext — with Advanced UI\nSee /core and /ui folders for instructions.

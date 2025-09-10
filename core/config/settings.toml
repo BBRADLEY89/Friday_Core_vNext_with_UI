@@ -1,0 +1,17 @@
+[server]
+host = "127.0.0.1"
+port = 8765
+[auth]
+openai_api_key = ""
+[paths]
+workspace_root = "workspace"
+plugins_root = "plugins"
+logs_dir = "logs"
+memory_dir = "memory"
+[web]
+serpapi_api_key = "77da81f311c9b11d32fbc1713df822e9def2e2a7f762793f45a745e2c92d6f47"
+[voice]
+elevenlabs_api_key = "sk_82bf4204fa8c9d18214ec86232bd67bc3149e49b3d80aa2a"
+voice_id = "EXAVITQu4vr4xnSDxMaL"
+[timezone]
+tz = "Europe/London"

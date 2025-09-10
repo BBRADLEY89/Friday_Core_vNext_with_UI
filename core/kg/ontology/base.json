@@ -1,0 +1,39 @@
+{
+  "entities": {
+    "Contract": {
+      "props": ["id", "title", "effective_date", "law"],
+      "description": "A legal contract document"
+    },
+    "Clause": {
+      "props": ["id", "number", "type", "text", "scope", "value"],
+      "description": "A specific clause within a contract"
+    }
+  },
+  "relations": {
+    "PART_OF": {
+      "from": "Clause",
+      "to": "Contract",
+      "description": "Clause belongs to a contract"
+    },
+    "CONTRADICTS": {
+      "from": "Clause",
+      "to": "Clause", 
+      "description": "One clause contradicts another"
+    },
+    "EXCEPTION_TO": {
+      "from": "Clause",
+      "to": "Clause",
+      "description": "One clause is an exception to another"
+    }
+  },
+  "clause_types": [
+    "PaymentDeadline",
+    "DeliveryDate", 
+    "TerminationClause",
+    "LiabilityClause",
+    "IntellectualProperty",
+    "Confidentiality",
+    "Warranty",
+    "Indemnification"
+  ]
+}

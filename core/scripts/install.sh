@@ -1,0 +1,1 @@
+#!/usr/bin/env bash\nset -euo pipefail\nmkdir -p workspace logs memory/journal\npip install --upgrade pip\npip install -r requirements.txt\necho 'ok'\n

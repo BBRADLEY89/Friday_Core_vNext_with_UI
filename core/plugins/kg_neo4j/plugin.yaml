@@ -1,0 +1,4 @@
+name: kg_neo4j
+description: Knowledge Graph plugin using Neo4j for contract analysis
+version: "0.1.0"
+author: Universe System

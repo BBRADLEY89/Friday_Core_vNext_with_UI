@@ -1,0 +1,4 @@
+name: rules_datalog
+description: Domain logic rules engine for contract analysis
+version: "0.1.0"
+author: Universe System

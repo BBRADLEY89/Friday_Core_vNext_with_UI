@@ -1,0 +1,76 @@
+{
+  "name": "Amount Inconsistency Scenario",
+  "description": "Contract with mismatched amount values to test numeric inconsistency detection",
+  "kg_data": {
+    "nodes": [
+      {
+        "id": "EVAL-003",
+        "labels": ["Contract"],
+        "properties": {
+          "id": "EVAL-003",
+          "title": "Contract with Amount Mismatch",
+          "effective_date": "2025-03-01",
+          "law": "State of Texas"
+        }
+      },
+      {
+        "id": "eval-clause-005",
+        "labels": ["Clause"],
+        "properties": {
+          "id": "eval-clause-005",
+          "number": "3",
+          "type": "PaymentDeadline",
+          "text": "Total contract value is $50,000",
+          "scope": "Payment terms",
+          "value": 50000,
+          "deadline_days": 30
+        }
+      },
+      {
+        "id": "eval-clause-006",
+        "labels": ["Clause"],
+        "properties": {
+          "id": "eval-clause-006",
+          "number": "6",
+          "type": "LiabilityClause",
+          "text": "Liability cap set at $75,000",
+          "scope": "Liability terms",
+          "value": 75000,
+          "deadline_days": null
+        }
+      }
+    ],
+    "relationships": [
+      {
+        "source": "eval-clause-005",
+        "target": "EVAL-003",
+        "type": "PART_OF",
+        "properties": {}
+      },
+      {
+        "source": "eval-clause-006",
+        "target": "EVAL-003",
+        "type": "PART_OF",
+        "properties": {}
+      }
+    ]
+  },
+  "question": "Review the financial terms in contract EVAL-003 for consistency.",
+  "expected_flags": [
+    "Amount Inconsistencies",
+    "Liability cap exceeds contract value"
+  ],
+  "expected_mentions": [
+    "$50,000",
+    "$75,000",
+    "liability",
+    "inconsistent",
+    "mismatch"
+  ],
+  "should_find_contradictions": false,
+  "grading": {
+    "amount_inconsistency_detected": true,
+    "specific_values_mentioned": [50000, 75000],
+    "financial_analysis": true
+  }
+}

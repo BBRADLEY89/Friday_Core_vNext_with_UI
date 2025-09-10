@@ -1,0 +1,20 @@
+name: memory_embeddings
+version: "0.2.0"
+description: "Semantic memory with OpenAI embeddings + SQLite"
+tools:
+  - name: memory_save
+    description: "Save text with embedding to memory"
+    parameters:
+      type: object
+      properties:
+        text: { type: string }
+      required: [text]
+  - name: memory_search
+    description: "Search memory semantically"
+    parameters:
+      type: object
+      properties:
+        query: { type: string }
+        k: { type: integer, default: 5 }
+        threshold: { type: number, default: 0.35 }
+      required: [query]
