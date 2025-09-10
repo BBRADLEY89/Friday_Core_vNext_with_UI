@@ -28,3 +28,6 @@ core/kg/neo4j_logs/
 
 core/kg/neo4j_data/
 core/kg/neo4j_logs/
+
+core/kg/neo4j_data/
+core/kg/neo4j_logs/
