@@ -1,4 +1,5 @@
 import os, toml, requests, io, sys, json
+from dotenv import load_dotenv
 from fastapi import FastAPI, File, UploadFile, Response, HTTPException, Request
 from fastapi.responses import JSONResponse
 from zoneinfo import ZoneInfo
@@ -15,6 +16,10 @@ from .memory_store import save_text as mem_save_text, upsert_embedding as mem_up
 
 # Add plugins directory to path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'plugins'))
+
+# Load core/.env (non-overriding)
+CORE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+load_dotenv(os.path.join(CORE_DIR, '.env'), override=False)
 
 # Import memory embeddings plugin
 try:

@@ -11,3 +11,4 @@ numpy
 neo4j
 z3-solver
 httpx
+python-dotenv==1.0.1
