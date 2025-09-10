@@ -25,3 +25,6 @@ env/
 # Neo4j runtime data & logs (do NOT commit)
 core/kg/neo4j_data/
 core/kg/neo4j_logs/
+
+core/kg/neo4j_data/
+core/kg/neo4j_logs/
