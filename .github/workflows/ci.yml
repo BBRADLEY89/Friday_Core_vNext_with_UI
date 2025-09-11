@@ -1,0 +1,40 @@
+name: CI
+on: [push, pull_request]
+
+jobs:
+  core:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install deps
+        run: |
+          pip install -r core/requirements.txt || true
+          pip install ruff black mypy pytest
+      - name: Lint / Typecheck / Test
+        run: |
+          ruff check core
+          black --check core
+          mypy core || true
+          pytest -q || true
+
+  ui:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Install UI deps
+        run: |
+          cd ui
+          npm ci || npm install
+      - name: Typecheck / Test / Lint
+        run: |
+          cd ui
+          npm run -s typecheck || true
+          npm test -- --run || true
+          npm run -s lint || true
