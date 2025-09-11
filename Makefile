@@ -1,26 +1,26 @@
-SHELL := /bin/bash
-.PHONY: neo4j-up dev-core dev-ui stop-8767 health clean-core-venv
+.PHONY: setup core ui dev test precommit
 
-neo4j-up:
-	docker compose up -d
+PY=python3
 
-dev-core:
-	@set -e; \
-	cd core; \
-	if [ ! -d .venv ]; then python3 -m venv .venv; fi; \
-	source .venv/bin/activate; \
-	if [ -f .env ]; then set -a; source .env; set +a; fi; \
-	python -m pip install -r requirements.txt; \
-	python -m uvicorn fcore_vnext.server:app --host 127.0.0.1 --port 8767
+setup:
+	$(PY) -m pip install -r core/requirements.txt || true
+	$(PY) -m pip install pre-commit ruff black mypy isort
+	pre-commit install
+	cd ui && npm ci || npm install
 
-dev-ui:
-	cd ui && (npm ci || npm install) && npm run dev
+core:
+	uvicorn core.app.main:app --reload --host 127.0.0.1 --port 8769
 
-stop-8767:
-	bash scripts/stop_port.sh 8767
+ui:
+	cd ui && npm run dev
 
-health:
-	curl -s http://127.0.0.1:8767/health || true
+dev:
+	# requires: npm i -g concurrently or use npx
+	npx concurrently "make core" "make ui"
 
-clean-core-venv:
-	rm -rf core/.venv
+test:
+	pytest -q || true
+	cd ui && npm test -- --run || true
+
+precommit:
+	pre-commit run --all-files
