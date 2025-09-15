@@ -12,7 +12,7 @@ from .executor import Executor
 from .sandbox import Sandbox
 from pydantic import BaseModel
 from typing import List
-from .memory_store import save_text as mem_save_text, upsert_embedding as mem_upsert_embedding, search as mem_search
+#from .memory_store import save_text as mem_save_text, upsert_embedding as mem_upsert_embedding, search as mem_search
 
 # Add plugins directory to path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'plugins'))
@@ -145,7 +145,7 @@ def chat(req: ChatRequest, request: Request):
         os.environ["TZ_OVERRIDE"] = TZ
 
         messages = [m.model_dump() for m in req.messages]
-        messages = messages[-4:]
+messages = messages[-12:]
 
         # Persona system prompt
         persona = CONFIG.get("persona", {}) or {}
@@ -161,18 +161,17 @@ def chat(req: ChatRequest, request: Request):
 
         # Memory search (local store)
         user_message = req.messages[-1].content if req.messages else ""
-        try:
-            if user_message:
-                q_emb = _embed_text(user_message)
-                results = mem_search(q_emb, top_k=3)
-                notes = [r["text"] for r in results if float(r.get("score", 0)) >= 0.75]
-                if notes:
-                    memo = "Relevant notes:\n" + "\n".join([f"- {t}" for t in notes])
-                    memo = memo[:2000]  # simple trim
-                    messages.insert(1, {"role": "system", "content": memo})
-        except Exception as e:
-            print(f"Local memory search error: {e}")
-
+       try:
+        if user_message:
+            # Ask plugin for top memories
+            mres = registry.run("memory_search", {"query": user_message, "k": 5, "threshold": 0.35}) or {}
+            rows = (mres.get("results") or [])[:5]
+            notes = [r.get("text") for r in rows if r.get("text")]
+            if notes:
+                memo = "Relevant memories:\n- " + "\n- ".join(notes)
+                messages.insert(1, {"role": "system", "content": memo[:2000]})
+except Exception as e:
+        print(f"Local memory search error: {e}")
         # Encourage KG/rules
         messages.insert(1, {"role": "system", "content": "Use KG and rules when helpful; always cite evidence if you used them."})
 
@@ -190,17 +189,34 @@ def chat(req: ChatRequest, request: Request):
         else:
             final_response = {"content": first.get("content",""), "tool_used": None}
 
-        # Auto-save salient facts (local store)
+       # === Quantum Mirror: always write a journal entry ===
+        try:
+            registry.run("journal_write", {
+                "user_message": user_message,
+                "friday_response": final_response.get("content", ""),
+                "tool_used": final_response.get("tool_used")
+            })
+        except Exception as e:
+            print("[journal] write failed:", e)
+        # === Reflection step: extract memory atoms (facts/todos) and save via plugin ===
         try:
             if user_message and final_response.get("content"):
-                conversation_context = f"User said: {user_message}\nFriday replied: {final_response['content']}"
-                # embed + save
-                emb = _embed_text(conversation_context)
-                mem_id = mem_save_text(conversation_context)
-                mem_upsert_embedding(mem_id, conversation_context, emb)
+                reflect_msgs = [
+                    {"role":"system","content":"Extract up to 3 short memory atoms from the exchange. JSON only: {\"facts\":[...],\"todos\":[...]}"},
+                    {"role":"user","content": f"User said: {user_message}\nFriday replied: {final_response.get('content','')}"}
+                ]
+                atoms_resp = __import__("core.fcore_vnext.adapters.openai_adapter", fromlist=["openai_adapter"]).openai_adapter.generate(
+                    reflect_msgs, [], "[]", api_key=get_config_value("auth","openai_api_key","OPENAI_API_KEY")
+                )
+                data = json.loads(atoms_resp.get("content") or "{}")
+                for t in (data.get("facts") or [])[:3]:
+                    registry.run("memory_save", {"text": str(t)[:280]})
+                for td in (data.get("todos") or [])[:3]:
+                    registry.run("memory_save", {"text": ("TODO: " + str(td))[:280]})
         except Exception as e:
-            print(f"Memory save error: {e}")
+            
 
+    ### return final_response
         return final_response
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
