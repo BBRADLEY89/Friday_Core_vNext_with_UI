@@ -1,1 +1,121 @@
-<!doctype html><html><body><div id='root'></div><script type='module' src='/src/main.tsx'></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Friday — Local Chat</title>
+  <style>
+    :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+    body { margin: 0; background: #0b0c10; color: #eaf0f6; }
+    header { padding: 14px 16px; background:#11131a; border-bottom:1px solid #1f2430; display:flex; gap:12px; align-items:center; }
+    header input[type=url]{ flex:1; padding:8px 10px; background:#0b0c10; color:#eaf0f6; border:1px solid #2a3340; border-radius:8px; }
+    header button{ padding:8px 12px; background:#2a66ff; color:white; border:0; border-radius:8px; cursor:pointer;}
+    header button.secondary{ background:#242a36; }
+    main { max-width: 860px; margin: 0 auto; padding: 18px; display:flex; flex-direction:column; gap:12px; }
+    .msg { padding: 12px 14px; border:1px solid #1f2430; border-radius:14px; line-height:1.4; }
+    .user { background:#0e1320; align-self:flex-end; }
+    .assistant { background:#0f1b2e; }
+    .sys { background:#161b22; color:#aeb6c2; }
+    form { display:flex; gap:10px; padding: 8px 16px 16px; position:sticky; bottom:0; background:linear-gradient(180deg,rgba(11,12,16,0),#0b0c10 40%); }
+    textarea { flex:1; min-height:44px; max-height:140px; padding:10px; border-radius:12px; border:1px solid #2a3340; background:#0b0c10; color:#eaf0f6; resize:vertical; }
+    form button { padding:10px 14px; border-radius:12px; border:0; background:#2a66ff; color:white; cursor:pointer; }
+    small.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color:#9fb0c3; }
+    .row { display:flex; gap:10px; align-items:center; }
+    .toolbar { display:flex; gap:8px; }
+    .toolbar button { background:#242a36; color:#d6dee9; border:1px solid #2a3340; }
+  </style>
+</head>
+<body>
+  <header>
+    <input id="baseUrl" type="url" value="http://127.0.0.1:8767" />
+    <div class="toolbar">
+      <button id="clear">Clear</button>
+      <button id="export">Export</button>
+    </div>
+  </header>
+
+  <main id="log"></main>
+
+  <form id="sendForm">
+    <textarea id="input" placeholder="Talk to Friday…" autocomplete="off"></textarea>
+    <button type="submit">Send</button>
+  </form>
+
+  <script>
+    const log = document.getElementById('log');
+    const input = document.getElementById('input');
+    const baseUrl = document.getElementById('baseUrl');
+    const form = document.getElementById('sendForm');
+    const clearBtn = document.getElementById('clear');
+    const exportBtn = document.getElementById('export');
+
+    // Restore history from localStorage
+    let messages = [];
+    try { messages = JSON.parse(localStorage.getItem('friday_msgs')||'[]'); } catch {}
+    render();
+
+    clearBtn.onclick = () => {
+      messages = [];
+      localStorage.removeItem('friday_msgs');
+      render();
+      input.focus();
+    };
+
+    exportBtn.onclick = () => {
+      const blob = new Blob([JSON.stringify(messages,null,2)], {type:'application/json'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `friday_history_${new Date().toISOString().slice(0,10)}.json`;
+      a.click();
+    };
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const text = input.value.trim();
+      if (!text) return;
+      push({ role: 'user', content: text });
+      input.value = '';
+      try {
+        const res = await fetch(new URL('/chat', baseUrl.value).toString(), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messages })
+        });
+        if (!res.ok) {
+          const err = await res.text();
+          push({ role:'system', content:`[error ${res.status}] ${err}` });
+          return;
+        }
+        const data = await res.json(); // {content, tool_used?, intermediate?}
+        push({ role: 'assistant', content: data.content || '' });
+      } catch (err) {
+        push({ role:'system', content:`[network] ${err}` });
+      }
+    });
+
+    function push(m) {
+      messages.push(m);
+      if (messages.length > 100) messages = messages.slice(-100);
+      localStorage.setItem('friday_msgs', JSON.stringify(messages));
+      render();
+    }
+
+    function render() {
+      log.innerHTML = '';
+      for (const m of messages) {
+        const div = document.createElement('div');
+        div.className = 'msg ' + (m.role === 'user' ? 'user' : m.role === 'assistant' ? 'assistant' : 'sys');
+        div.innerHTML = sanitize(m.content || '');
+        log.appendChild(div);
+      }
+      window.scrollTo(0, document.body.scrollHeight);
+    }
+
+    function sanitize(s) {
+      return (s+'')
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+        .replace(/\n/g,'<br>');
+    }
+  </script>
+</body>
+</html>
